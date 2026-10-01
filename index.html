@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>WHAT THE FUCK IS THIS</title>
+<style>
+  :root { --bg:#0a0a0a; --fg:#fff; --y:#ffe600; box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); }
+  html,body { margin:0; height:100%; background:var(--bg); color:var(--fg); overflow:hidden; font-family:system-ui,sans-serif; }
+  #app { height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; text-align:center; padding:16px; }
+  h1 { margin:0; font-size:clamp(22px,6vw,40px); letter-spacing:1px; }
+  #btn { font:900 clamp(36px,12vw,80px)/1 system-ui,sans-serif; padding:.5em .8em; background:var(--y); color:#000; border:0; border-radius:24px; cursor:pointer; box-shadow:0 10px 0 #b3a100; transition:transform .1s; }
+  #btn:active { transform:translateY(8px); box-shadow:0 2px 0 #b3a100; }
+  #cnt { font-weight:700; opacity:.85; } #last { min-height:1.4em; opacity:.6; font-size:14px; }
+  #rs { position:fixed; bottom:calc(8px + env(safe-area-inset-bottom,0px)); right:12px; font-size:12px; opacity:.4; background:none; border:0; color:var(--fg); cursor:pointer; }
+  .pop { position:fixed; z-index:9; left:50%; top:50%; transform:translate(-50%,-50%); text-align:center; max-width:86vw; font-weight:800; font-size:clamp(24px,7vw,56px); pointer-events:none; }
+  .err { background:#c0c0c0; color:#000; padding:16px 22px; border:3px outset #fff; font:700 16px monospace; }
+  .toast { top:auto; bottom:14%; font-size:18px; background:#222; padding:12px 18px; border-radius:12px; border:2px solid var(--y); }
+  .bsod { inset:0; left:0; top:0; transform:none; max-width:none; background:#0078d7; color:#fff; padding:10vw; text-align:left; font-weight:400; font-size:clamp(18px,4vw,30px); }
+  .scream { inset:0; left:0; top:0; transform:none; max-width:none; display:flex; align-items:center; justify-content:center; background:#000; color:#f00; font-size:clamp(40px,16vw,160px); animation:flash .15s steps(2) infinite; word-break:break-all; line-height:1; }
+  .bar { width:260px; height:14px; background:#333; margin:12px auto 0; border-radius:8px; overflow:hidden; }
+  .bar i { display:block; height:100%; background:#0f0; animation:ld 2s linear forwards; }
+  .fall { position:fixed; top:-10vh; z-index:8; pointer-events:none; animation:fall linear forwards; }
+  .duck { position:fixed; bottom:20%; font-size:90px; z-index:8; pointer-events:none; animation:walk 3s linear forwards; }
+  .secret { position:fixed; z-index:10; font-size:20px; padding:12px; background:#f0f; color:#fff; border:0; border-radius:8px; }
+  @keyframes fall { to { transform:translateY(120vh) rotate(360deg); } }
+  @keyframes walk { from{left:-120px} to{left:110vw} }
+  @keyframes ld { from{width:0} to{width:100%} }
+  @keyframes flash { 50% { background:#400; color:#fff; } }
+  @keyframes hue { to { filter:hue-rotate(360deg); } }
+
+  #btn{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  #meter{width:min(260px,70vw);font-size:11px;opacity:.85}
+  #meter .mb{height:10px;background:#333;border-radius:8px;overflow:hidden;margin-top:4px}
+  #meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,#0f0,#ffe600,#f00);transition:width .4s}
+  #tr{position:fixed;bottom:calc(8px + env(safe-area-inset-bottom,0px));left:12px;font-size:20px;opacity:.25;background:none;border:0;cursor:pointer;min-width:44px;min-height:44px}
+  #panel{display:none;position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.94);overflow:auto;padding:calc(20px + env(safe-area-inset-top,0px)) 20px 40px;font-size:15px;line-height:1.7}
+  #panel.on{display:block} #panel h2{margin:.8em 0 .2em;color:var(--y);font-size:18px} #panel .dim{opacity:.4}
+  .hid{position:fixed;z-index:7;font-size:28px;min-width:48px;min-height:48px;opacity:.35;background:none;border:0;cursor:pointer}
+</style>
+</head>
+<body>
+<div id="app">
+  <h1>WHAT THE FUCK IS THIS</h1>
+  <button id="btn">CLICK ME</button>
+  <div id="cnt"></div><div id="last"></div>
+</div>
+<button id="rs">reset progress</button>
+<script>
+const app=document.getElementById('app'), btn=document.getElementById('btn'), cnt=document.getElementById('cnt'), last=document.getElementById('last');
+let found=new Set(); try{found=new Set(JSON.parse(localStorage.getItem('wtf')||'[]'))}catch(e){}
+const E=[], add=(l,f)=>E.push({l,f}), R=a=>a[Math.floor(Math.random()*a.length)];
+function pop(h,ms=1800,c=''){const d=document.createElement('div');d.className='pop '+c;d.innerHTML=h;document.body.append(d);setTimeout(()=>d.remove(),ms);return d;}
+function fx(css,ms){const o={};for(const k in css){o[k]=app.style[k];app.style[k]=css[k];}setTimeout(()=>{for(const k in o)app.style[k]=o[k];},ms);}
+function rain(e){for(let i=0;i<40;i++){const s=document.createElement('span');s.className='fall';s.textContent=e;s.style.left=Math.random()*100+'vw';s.style.animationDuration=(1.5+Math.random()*2)+'s';s.style.animationDelay=Math.random()*.8+'s';s.style.fontSize=(24+Math.random()*30)+'px';document.body.append(s);setTimeout(()=>s.remove(),4600);}}
+const toast=t=>pop(t,2200,'toast');
+
+// handcrafted
+add('Screen spin',()=>fx({transition:'transform 1s',transform:'rotate(360deg)'},1100));
+add('Upside down',()=>fx({transition:'transform .6s',transform:'rotate(180deg)'},3000));
+add('Mirror world',()=>fx({transform:'scaleX(-1)'},3000));
+add('Duck appears',()=>{const d=document.createElement('div');d.className='duck';d.textContent='🦆';document.body.append(d);setTimeout(()=>d.remove(),3100);pop('QUACK',1500);});
+add('Button runs away',()=>{let n=0;const iv=setInterval(()=>{btn.style.position='fixed';btn.style.left=Math.random()*55+'vw';btn.style.top=Math.random()*70+'vh';if(++n>8){clearInterval(iv);btn.style.position='';btn.style.left='';btn.style.top='';}},350);});
+add('Secret button (0.2s)',()=>{const b=document.createElement('button');b.className='secret';b.textContent='🔑 SECRET';b.style.left=10+Math.random()*60+'vw';b.style.top=10+Math.random()*70+'vh';b.onclick=()=>{b.remove();toast('🏆 You actually caught it. Respect.');unlock('secret');};document.body.append(b);setTimeout(()=>b.remove(),200);});
+add('Earthquake',()=>{let n=0;const iv=setInterval(()=>{app.style.transform=`translate(${Math.random()*30-15}px,${Math.random()*30-15}px)`;if(++n>20){clearInterval(iv);app.style.transform='';}},50);});
+add('Invert colors',()=>fx({filter:'invert(1)'},2500));
+add('Rainbow melt',()=>fx({animation:'hue 1s linear infinite'},3000));
+add('Blurry vision',()=>fx({filter:'blur(8px)'},2500));
+add('Giant button',()=>fx({},0)||(btn.style.transform='scale(2.2)',setTimeout(()=>btn.style.transform='',2500)));
+add('Tiny button',()=>{btn.style.transform='scale(.2)';setTimeout(()=>btn.style.transform='',2500);});
+add('Comic Sans mode',()=>{document.body.style.fontFamily='"Comic Sans MS",cursive';btn.style.fontFamily='"Comic Sans MS",cursive';setTimeout(()=>{document.body.style.fontFamily='';btn.style.fontFamily='';},3000);});
+add('Fake virus install',()=>{const d=pop('Installing 1 virus...<div class="bar"><i></i></div>',3500);setTimeout(()=>d.innerHTML='99%... nah bro 😭',2000);});
+add('Blue screen',()=>pop(':(<br>Your PC ran into a problem.<br>Just kidding. It is a website.',2200,'bsod'));
+add('Zoom out',()=>fx({transition:'transform 1s',transform:'scale(.3)'},2200));
+add('Slow motion tilt',()=>fx({transition:'transform 2s',transform:'rotate(-12deg) skewX(10deg)'},2500));
+add('AAAAAAAA',()=>pop('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',1500,'scream'));
+add('Fake Wi-Fi loss',()=>{const d=pop('📡 No internet connection',1800);setTimeout(()=>d.innerHTML='lol you are fine',1200);});
+
+['Fatal error: too much vibe','Error 404: brain not found','Warning: your duck is overheating','Exception: user is too cool','Error 418: I am a teapot','Stack overflow: too many snacks','Out of memory: Mondays.exe','Kernel panic: pizza missing','Error 500: skill issue','Segfault: touch grass.exe','Disk full: 4TB of memes','Connection lost to the vibe server','Update required: your personality','Permission denied: nice try'].forEach(m=>add('Fake error: '+m.slice(0,18),()=>pop('⚠️ '+m,2000,'err')));
+['BRUH','NOOOOO','WHY','HELP','OH NO','AAAAAA','STOP','WAAAAH'].forEach(w=>add('Screaming: '+w,()=>pop((w+' ').repeat(8),1400,'scream')));
+['Clicked a button (wow)','Professional clicker','Touched the screen','Wasted 10 seconds','Seen a duck','Has a finger','Almost productive','Chaos enjoyer','Pixel destroyer','Meme lord level 1','Unlocked nothing','Certified menace','Waited for nothing','Panic clicker','Procrastination master','Still here?'].forEach(a=>add('Achievement: '+a,()=>toast('🏆 Achievement unlocked: '+a)));
+['nah bro','not today','try again, loser (affectionate)','absolutely not','bro what','no','skill issue','ok but why','I refuse','nope 💀'].forEach(n=>add('Nah: '+n,()=>pop(n,1600)));
+[['rotate(90deg)','Sideways'],['rotate(45deg)','Diagonal'],['scaleY(-1)','Flipped'],['skewX(25deg)','Slanted'],['skewY(15deg)','Wobbly'],['scale(1.4)','Zoomed in'],['rotate(-90deg)','Other sideways'],['rotate(720deg) scale(.6)','Double spin'],['perspective(300px) rotateY(50deg)','3D tilt'],['rotate(15deg) scale(.8)','Slightly off']].forEach(([t,n])=>add('Transform: '+n,()=>fx({transition:'transform .5s',transform:t},2200)));
+[['#ff0055','Red alert'],['#00e5ff','Cyan flash'],['#7cff00','Lime flash'],['#ff9100','Orange flash'],['#a000ff','Purple flash'],['#ffffff','White flash'],['#ff00c8','Pink flash'],['#0044ff','Blue flash'],['#ffee00','Yellow flash'],['#00ff9d','Mint flash']].forEach(([c,n])=>add(n,()=>{document.body.style.background=c;setTimeout(()=>document.body.style.background='',350);}));
+['🦆','🍕','💀','🐸','🔥','🌈','👻','🐔','🍌','🚀','👽','🧀','🦄','🐟','🍩','🪩','🐙','🥔','💩','🤡'].forEach(e=>add('Rain: '+e,()=>rain(e)));
+
+const total=E.length;
+function render(){cnt.textContent=`Discovered ${found.size} / ${total}`;}
+function save(){try{localStorage.setItem('wtf',JSON.stringify([...found]));}catch(e){}}
+function normalClick(){
+  const fresh=E.map((e,i)=>i).filter(i=>!found.has(i));
+  const i=(fresh.length&&Math.random()<.7)?R(fresh):Math.floor(Math.random()*total);
+  const isNew=!found.has(i); found.add(i); save();
+  E[i].f(); last.textContent=(isNew?'NEW! ':'')+E[i].l; render();
+  if(found.size===total) setTimeout(finale,800);
+}
+document.getElementById('rs').onclick=()=>{found=new Set();save();last.textContent='';render();};
+let S={clicks:0,sec:[],rare:[],hid:[],silence:false,finale:false};
+try{Object.assign(S,JSON.parse(localStorage.getItem('wtf2')||'{}'))}catch(e){}
+const sv=()=>{try{localStorage.setItem('wtf2',JSON.stringify(S));}catch(e){}};
+const SEC={secret:'Caught the 0.2s button',c100:'100 clicks',c500:'500 clicks',rare1:'First rare event',rare10:'All 10 rare events',hid1:'Found a hidden object',hid4:'Found all hidden objects',chaos:'Chaos meter maxed',silence:'Survived the silence',finale:'Discovered every event'};
+function unlock(id){if(S.sec.includes(id))return;S.sec.push(id);sv();setTimeout(()=>toast('🕵️ Secret achievement: '+SEC[id]),700);}
+const RARE=[
+['Golden duck',()=>{rain('🦆');pop('✨ GOLDEN DUCK ✨',2500);}],
+['Black hole',()=>fx({transition:'transform 1.2s',transform:'scale(0) rotate(720deg)'},1400)],
+['Retro 1999',()=>{fx({filter:'sepia(1) contrast(1.4)'},3500);pop('Loading 1999...',2500);}],
+['Disco',()=>{let n=0;const iv=setInterval(()=>{document.body.style.background=`hsl(${n*47},90%,50%)`;if(++n>14){clearInterval(iv);document.body.style.background='';}},200);}],
+['Duck army',()=>{for(let i=0;i<5;i++)setTimeout(()=>{const d=document.createElement('div');d.className='duck';d.style.bottom=10+i*14+'%';d.textContent='🦆';document.body.append(d);setTimeout(()=>d.remove(),3100);},i*400);}],
+['Snack thief cat',()=>pop('🐱 I took your snacks.',2500)],
+['Reality glitch',()=>{let n=0;const iv=setInterval(()=>{app.style.filter=n%2?'invert(1)':'hue-rotate(120deg)';app.style.transform=`translate(${Math.random()*40-20}px,${Math.random()*40-20}px) skew(${Math.random()*20-10}deg)`;if(++n>16){clearInterval(iv);app.style.filter='';app.style.transform='';}},90);}],
+['Confetti nuke',()=>['🎉','💥','⭐','🎊'].forEach(rain)],
+['Ghost visit',()=>{fx({filter:'blur(3px) grayscale(1)'},3000);pop('👻 boo',2500);}],
+['Mirror dimension',()=>fx({transition:'transform .6s',transform:'scaleX(-1) rotate(180deg)'},4000)]];
+
+const mt=document.createElement('div');mt.id='meter';mt.innerHTML='<small>CHAOS</small><div class="mb"><i></i></div>';cnt.after(mt);
+function meter(){const c=Math.min(100,S.clicks*.4);mt.querySelector('i').style.width=c+'%';if(c>=100)unlock('chaos');}
+const BL=[[0,'CLICK ME'],[20,'click me?'],[40,'bro stop'],[70,'why are you still clicking?'],[110,'bro seriously?'],[160,'I KNOW WHAT YOU\'RE DOING'],[220,'don\'t.'],[280,'...']];
+function label(){if(S.silence){btn.textContent='CLICK ME 😈';return;}let t='CLICK ME';for(const [n,x] of BL)if(S.clicks>=n)t=x;btn.textContent=t;btn.style.fontSize=t.length>12?'clamp(22px,7vw,44px)':'';}
+const HID=['🕳️','👁️','🥚','🔮'];
+function spawnHidden(){const i=Math.floor(Math.random()*4),b=document.createElement('button');b.className='hid';b.textContent=HID[i];b.style.left=5+Math.random()*80+'vw';b.style.top=8+Math.random()*75+'vh';
+ b.onclick=()=>{b.remove();if(!S.hid.includes(i)){S.hid.push(i);sv();toast(HID[i]+' hidden object found!');unlock('hid1');if(S.hid.length===4)unlock('hid4');}else toast(HID[i]+' (already found)');};
+ document.body.append(b);setTimeout(()=>b.remove(),4500);}
+function finale(){
+  if(S.finale){pop('YOU FOUND EVERYTHING 🏆<br>now go touch grass',4000);return;}
+  S.finale=true;sv();unlock('finale');
+  ['🦆','💀','🔥','🚀','🌈'].forEach((e,i)=>setTimeout(()=>rain(e),i*500));
+  pop('AAAAAAAA AAAAAAAA',1200,'scream');
+  setTimeout(()=>pop('🏆 YOU FOUND EVERY EVENT 🏆<br>you are the chaos now.',5000),1500);
+}
+const panel=document.createElement('div');panel.id='panel';document.body.append(panel);
+panel.onclick=()=>panel.classList.remove('on');
+function showPanel(){
+  const a=Object.keys(SEC).map(k=>S.sec.includes(k)?`<div>🕵️ ${SEC[k]}</div>`:'<div class="dim">??? locked</div>').join('');
+  const r=RARE.map((x,i)=>S.rare.includes(i)?`<div>🎰 ${x[0]}</div>`:'<div class="dim">??? rare</div>').join('');
+  panel.innerHTML=`<h2>🏆 Collection</h2><div>Clicks: ${S.clicks} · Events: ${found.size}/${total}</div><h2>Secret achievements (${S.sec.length}/${Object.keys(SEC).length})</h2>${a}<h2>Rare events (${S.rare.length}/10)</h2>${r}<h2>Hidden objects (${S.hid.length}/4)</h2><div>${HID.map((h,i)=>S.hid.includes(i)?h:'❔').join(' ')}</div><p class="dim">tap anywhere to close</p>`;
+  panel.classList.add('on');
+}
+const tr=document.createElement('button');tr.id='tr';tr.textContent='🏆';tr.onclick=showPanel;document.body.append(tr);
+let silent=false;
+btn.addEventListener('click',()=>{
+  if(silent)return;
+  S.clicks++;
+  if(S.clicks===100)unlock('c100');
+  if(S.clicks===500)unlock('c500');
+  if(S.clicks>=300&&!S.silence){
+    silent=true;btn.textContent='...';sv();
+    setTimeout(()=>{silent=false;S.silence=true;sv();unlock('silence');pop('💥 CHAOS EVENT 💥',2500);
+      [0,1,2].forEach(i=>setTimeout(()=>E[Math.floor(Math.random()*total)].f(),i*700));
+      RARE[Math.floor(Math.random()*10)][1]();label();meter();},10000);
+    return;
+  }
+  if(Math.random()<Math.min(.5,S.clicks/500)){
+    btn.style.transform=`rotate(${Math.random()*40-20}deg) scale(${.7+Math.random()*.7})`;
+    btn.style.filter=`hue-rotate(${Math.floor(Math.random()*360)}deg)`;
+    setTimeout(()=>{btn.style.transform='';btn.style.filter='';},1400);
+  }
+  if(Math.random()<.03){
+    const i=Math.floor(Math.random()*10);RARE[i][1]();
+    if(!S.rare.includes(i))S.rare.push(i);
+    unlock('rare1');if(S.rare.length===10)unlock('rare10');
+    last.textContent='RARE! '+RARE[i][0];
+  } else normalClick();
+  if(Math.random()<.08)spawnHidden();
+  sv();label();meter();
+});
+label();meter();
+render();
+</script>
+</body>
+</html>
