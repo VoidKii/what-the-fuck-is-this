@@ -38,6 +38,14 @@
   #panel{display:none;position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.94);overflow:auto;padding:calc(20px + env(safe-area-inset-top,0px)) 20px 40px;font-size:15px;line-height:1.7}
   #panel.on{display:block} #panel h2{margin:.8em 0 .2em;color:var(--y);font-size:18px} #panel .dim{opacity:.4}
   .hid{position:fixed;z-index:7;font-size:28px;min-width:48px;min-height:48px;opacity:.35;background:none;border:0;cursor:pointer}
+
+  .fake-screen{position:fixed;inset:0;z-index:30;background:#050505;color:#39ff14;padding:8vh 7vw;font:16px/1.6 monospace;overflow:hidden}
+  .fake-screen h2{font:700 24px monospace;color:#ffe600;margin-top:0}
+  .fake-screen .cursor{display:inline-block;width:9px;height:18px;background:#39ff14;vertical-align:-3px;animation:blink .7s steps(2) infinite}
+  .boss{position:fixed;inset:0;z-index:31;background:#000;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px}
+  .boss h2{font-size:clamp(28px,9vw,72px);margin:0 0 12px}
+  .boss .bossbtn{font:900 20px system-ui;padding:14px 20px;border:0;border-radius:14px;background:#ffe600;color:#000;cursor:pointer}
+  @keyframes blink{50%{opacity:0}}
 </style>
 </head>
 <body>
@@ -96,10 +104,10 @@ function normalClick(){
   if(found.size===total) setTimeout(finale,800);
 }
 document.getElementById('rs').onclick=()=>{found=new Set();save();last.textContent='';render();};
-let S={clicks:0,sec:[],rare:[],hid:[],silence:false,finale:false};
+let S={clicks:0,sec:[],rare:[],hid:[],silence:false,finale:false,boss:false};
 try{Object.assign(S,JSON.parse(localStorage.getItem('wtf2')||'{}'))}catch(e){}
 const sv=()=>{try{localStorage.setItem('wtf2',JSON.stringify(S));}catch(e){}};
-const SEC={secret:'Caught the 0.2s button',c100:'100 clicks',c500:'500 clicks',rare1:'First rare event',rare10:'All 10 rare events',hid1:'Found a hidden object',hid4:'Found all hidden objects',chaos:'Chaos meter maxed',silence:'Survived the silence',finale:'Discovered every event'};
+const SEC={secret:'Caught the 0.2s button',c100:'100 clicks',c500:'500 clicks',rare1:'First rare event',rare10:'All 10 rare events',hid1:'Found a hidden object',hid4:'Found all hidden objects',chaos:'Chaos meter maxed',silence:'Survived the silence',finale:'Discovered every event',boss:'Defeated the 1000-click button',konami:'Entered the forbidden code'};
 function unlock(id){if(S.sec.includes(id))return;S.sec.push(id);sv();setTimeout(()=>toast('🕵️ Secret achievement: '+SEC[id]),700);}
 const RARE=[
 ['Golden duck',()=>{rain('🦆');pop('✨ GOLDEN DUCK ✨',2500);}],
@@ -141,8 +149,10 @@ let silent=false;
 btn.addEventListener('click',()=>{
   if(silent)return;
   S.clicks++;
+  beep(180+Math.min(S.clicks,1000)*.45,.035);
   if(S.clicks===100)unlock('c100');
   if(S.clicks===500)unlock('c500');
+  if(S.clicks===1000)boss();
   if(S.clicks>=300&&!S.silence){
     silent=true;btn.textContent='...';sv();
     setTimeout(()=>{silent=false;S.silence=true;sv();unlock('silence');pop('💥 CHAOS EVENT 💥',2500);
